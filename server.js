@@ -7,6 +7,7 @@ var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 
 var Contact = require('./models/Contact');
+var User = require('./models/User');
 
 app.set('view engine', 'hbs');
 app.engine('hbs', handlebars({
@@ -14,16 +15,22 @@ app.engine('hbs', handlebars({
     extname: 'hbs'
 }))
 
+app.use(express.static('public'));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended:false}));
 
-app.get('/', (req, res )=>{
+app.get('/', (req, res) => {
+    res.render('login', { layout: 'main' });
+})
+
+app.get('/dashboard', (req, res )=>{
     Contact.find({}).lean()
     .exec((err, contacts) =>{
         if(contacts.length){
-        res.render('index' , { layout: 'main', contacts: contacts, contactsExist: true });
+        res.render('dashboard' , { layout: 'main', contacts: contacts, contactsExist: true });
         } else {
-        res.render('index' , { layout: 'main', contacts: contacts, contactsExist: false }); //send this info to/
+        res.render('dashboard' , { layout: 'main', contacts: contacts, contactsExist: false }); //send this info to/
     }})
 });
 
@@ -38,9 +45,17 @@ app.post('/addContact', (req, res) =>{
     res.redirect('/');
 })
 
-app.get('/about', (req, res )=>{
-    res.render('about', { layout: 'main'});
-});
+app.post('/signup', (req, res) =>{
+    const { username, password } = req.body;
+    var user = new User({
+          username,
+          password
+    });
+    user.save();
+    res.redirect('/');
+})
+
+
 
 mongoose.connect('mongodb://localhost:27017/handlebars' , {
     useUnifiedTopology: true,
