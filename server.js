@@ -44,9 +44,7 @@ app.post('/signup', async (req, res) =>{
     let user = await User.findOne({ username });
 
     if(user){
-        res.redirect('/');
-        return console.log('User Already Exists');
-        return res.render('login', {layout:'main', userExist: true}).status(400);
+        res.status(400).render('login', { layout: 'main', userExist: true });
     }
     user = new User({
           username,
@@ -58,8 +56,7 @@ app.post('/signup', async (req, res) =>{
     user.password = await bcrypt.hash(password, salt);
 
     await user.save();
-    return res.render('login', {layout:'main', userExist: false}).status(200);
-    res.redirect('/');
+    res.status(200).render('login', {layout:'main', userDoesNotExist: true });
 } catch(err){
     console.log(err.message);
     res.status(500).send('Server Error');
