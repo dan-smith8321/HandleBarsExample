@@ -1,6 +1,9 @@
+{{#if userExist}}
+<div class = "card-panel red"<>User Already Exists</div>
+{{/if}}
 <form action="/signup" method="POST">
-    <input type ="text" name="name" placeholder="Enter Username/Email">
+    <input type ="email" name="username" id="username" placeholder="Enter Email">
     <input type ="password" name="password" placeholder="Enter Password">
-    <input type ="password" name="confirmPassword" placeholder="Confirm Password">
+    <input type ="password" name="confirmPassword" placeholder="Enter Password">
     <input type ="submit" value="submit" id = "signUpSubmit" class="btn waves-effect waves-light"> 
 </form>

@@ -1,24 +1,28 @@
 var express = require('express');
 var app = express();
-var handlebars = require('express-handlebars');
 
 var mongoose = require('mongoose');
 
 var bodyParser = require('body-parser');
 
-var Contact = require('./models/Contact');
-var User = require('./models/User');
+//requires the handlebar express package
+var handlebars = require('express-handlebars');
+var bcrypt = require('bcryptjs');
+
+const Contact = require('./models/Contact');
+const User = require('./models/User');
+
+app.use(express.static('public'));
 
 app.set('view engine', 'hbs');
+
 app.engine('hbs', handlebars({
     layoutsDir: __dirname + '/views/layouts',
     extname: 'hbs'
 }))
 
-app.use(express.static('public'));
-
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended:false}));
+app.use(bodyParser.urlencoded({ extended: false}));
 
 app.get('/', (req, res) => {
     res.render('login', { layout: 'main' });
@@ -34,28 +38,46 @@ app.get('/dashboard', (req, res )=>{
     }})
 });
 
+app.post('/signup', async (req, res) =>{
+    const { username, password } = req.body;
+    try{ //try this and if this doesn't this work then catch and provide an error
+    let user = await User.findOne({ username });
+
+    if(user){
+        res.redirect('/');
+        return console.log('User Already Exists');
+        return res.render('login', {layout:'main', userExist: true}).status(400);
+    }
+    user = new User({
+          username,
+          password
+    });
+//Salt Generation
+    const salt = await bcrypt.genSalt(10);
+//Password Encryption using password and salt
+    user.password = await bcrypt.hash(password, salt);
+
+    await user.save();
+    return res.render('login', {layout:'main', userExist: false}).status(200);
+    res.redirect('/');
+} catch(err){
+    console.log(err.message);
+    res.status(500).send('Server Error');
+}
+})
+
 app.post('/addContact', (req, res) =>{
     const { name, email, number } = req.body;
-    var contact = new Contact({
+
+    let contact = new Contact({
           name,
           email,
           number 
     });
+
     contact.save();
-    res.redirect('/');
+    res.redirect('/dashboard');
 })
-
-app.post('/signup', (req, res) =>{
-    const { username, password } = req.body;
-    var user = new User({
-          username,
-          password
-    });
-    user.save();
-    res.redirect('/');
-})
-
-
 
 mongoose.connect('mongodb://localhost:27017/handlebars' , {
     useUnifiedTopology: true,
