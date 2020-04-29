@@ -8,11 +8,25 @@ var bodyParser = require('body-parser');
 //requires the handlebar express package
 var handlebars = require('express-handlebars');
 var bcrypt = require('bcryptjs');
+var passport = require('passport');
+var session = require('express-session');
+require ('./middleware/passport')(passport);
 
 const Contact = require('./models/Contact');
 const User = require('./models/User');
 
 app.use(express.static('public'));
+app.use(session({//using express-session
+    secret: 'mySecret', //used to create a token similar to bcrpyt
+    resave: true,
+    saveUnitialized: true
+}))
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false}));
 
 app.set('view engine', 'hbs');
 
@@ -20,9 +34,6 @@ app.engine('hbs', handlebars({
     layoutsDir: __dirname + '/views/layouts',
     extname: 'hbs'
 }))
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false}));
 
 app.get('/', (req, res) => {
     res.render('login', { layout: 'main' });
@@ -32,7 +43,7 @@ app.get('/dashboard', (req, res )=>{
     Contact.find({}).lean()
     .exec((err, contacts) =>{
         if(contacts.length){
-        res.render('dashboard' , { layout: 'main', contacts: contacts, contactsExist: true });
+        res.render('dashboard' , { layout: 'main', contacts: contacts, contactsExist: true , username: req.user.username });
         } else {
         res.render('dashboard' , { layout: 'main', contacts: contacts, contactsExist: false }); //send this info to/
     }})
@@ -61,6 +72,18 @@ app.post('/signup', async (req, res) =>{
     console.log(err.message);
     res.status(500).send('Server Error');
 }
+})
+
+app.post('/signin', (req, res, next) => {
+    try {
+       passport.authenticate('local' ,{
+           successRedirect: '/dashboard',
+           failureRedirect: '/'
+       })(req, res, next);
+    } catch(err) {
+        console.log(err.message);
+        res.status(500).send('Server Error')
+    }
 })
 
 app.post('/addContact', (req, res) =>{
